@@ -13,7 +13,7 @@ build/
 .ipynb_checkpoints/
 
 # Data and artifacts
-data/
+/data/
 artifacts/
 experiments/results/*.json
 

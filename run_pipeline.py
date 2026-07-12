@@ -1,5 +1,4 @@
 import torch
-import json
 from pathlib import Path
 from torch.utils.data import DataLoader
 
@@ -15,7 +14,7 @@ def run_category(
     data_root: str,
     extractor: DINOv2Extractor,
     coreset_ratio: float = 0.1,
-    batch_size: int = 8,
+    batch_size: int = 16,
     visualize: bool = True,
     save_dir: str = "experiments/results"
 ):
@@ -23,22 +22,18 @@ def run_category(
     print(f"Running category: {category.upper()}")
     print(f"{'='*50}")
 
-    # datasets
     train_dataset = MVTecDataset(data_root, category, split="train")
     test_dataset = MVTecDataset(data_root, category, split="test")
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
 
-    # fit patchcore on normal training images
     patchcore = PatchCore(extractor=extractor, coreset_ratio=coreset_ratio)
     patchcore.fit(train_loader)
 
-    # save memory bank
     artifact_path = f"artifacts/{category}_memory_bank.pt"
     patchcore.save(artifact_path)
 
-    # run inference on test set
     all_labels = []
     all_image_scores = []
     all_patch_scores = []
@@ -56,10 +51,8 @@ def run_category(
         all_patch_scores.extend([patch_scores[i] for i in range(len(images))])
         all_paths.extend(paths)
 
-    # compute metrics
     result = compute_category_metrics(all_labels, all_image_scores, category)
 
-    # visualize samples
     if visualize:
         vis_dir = f"{save_dir}/visualizations/{category}"
         visualize_batch(
@@ -77,13 +70,15 @@ def run_category(
 def main():
     DATA_ROOT = "data/mvtec"
     SAVE_DIR = "experiments/results"
-    BATCH_SIZE = 8
+    BATCH_SIZE = 16
     CORESET_RATIO = 0.1
 
-    # run on these categories first — add more once verified
-    CATEGORIES_TO_RUN = ["bottle", "leather", "hazelnut"]
+    CATEGORIES_TO_RUN = [
+        "cable", "capsule", "carpet", "grid",
+        "metal_nut", "pill", "screw", "tile",
+        "toothbrush", "transistor", "wood", "zipper"
+    ]
 
-    # initialise extractor once and reuse across categories
     extractor = DINOv2Extractor()
 
     all_results = []
@@ -100,11 +95,8 @@ def main():
         )
         all_results.append(result)
 
-    # overall metrics
-    from src.evaluation.metrics import compute_overall_metrics
     overall = compute_overall_metrics(all_results)
 
-    # save results
     save_results(
         category_results=all_results,
         overall=overall,

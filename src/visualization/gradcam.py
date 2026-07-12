@@ -1,10 +1,11 @@
 import torch
 import numpy as np
+import matplotlib
+matplotlib.use("Agg")  # non-interactive backend — no window popups
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from PIL import Image
 from pathlib import Path
-from torchvision import transforms
 
 
 def patch_scores_to_heatmap(
@@ -24,7 +25,6 @@ def patch_scores_to_heatmap(
     n_patches = int(image_size // patch_size)
     scores_2d = patch_scores.reshape(n_patches, n_patches).numpy()
 
-    # upsample to image size
     heatmap = torch.nn.functional.interpolate(
         torch.tensor(scores_2d).unsqueeze(0).unsqueeze(0).float(),
         size=(image_size, image_size),
@@ -32,7 +32,6 @@ def patch_scores_to_heatmap(
         align_corners=False
     ).squeeze().numpy()
 
-    # normalize to 0-1
     heatmap = (heatmap - heatmap.min()) / (heatmap.max() - heatmap.min() + 1e-8)
 
     return heatmap
@@ -71,24 +70,14 @@ def visualize_anomaly(
 ):
     """
     Full visualization: original image + heatmap side by side.
-    Args:
-        image_path: path to original image
-        patch_scores: (num_patches,) scores from PatchCore
-        anomaly_score: image-level anomaly score
-        label: ground truth (0=normal, 1=anomaly)
-        save_path: if provided, save figure to this path
-        image_size: image size used during inference
-        patch_size: DINOv2 patch size
+    Saves to disk silently — no window popup.
     """
-    # load and resize original image
     image = Image.open(image_path).convert("RGB").resize((image_size, image_size))
     image_np = np.array(image)
 
-    # generate heatmap
     heatmap = patch_scores_to_heatmap(patch_scores, image_size, patch_size)
     overlaid = overlay_heatmap(image_np, heatmap)
 
-    # plot
     fig, axes = plt.subplots(1, 3, figsize=(12, 4))
 
     axes[0].imshow(image_np)
@@ -110,7 +99,6 @@ def visualize_anomaly(
         plt.savefig(save_path, dpi=150, bbox_inches="tight")
         print(f"Saved visualization to {save_path}")
 
-    plt.show()
     plt.close()
 
 
@@ -124,13 +112,7 @@ def visualize_batch(
 ):
     """
     Visualize a batch of predictions.
-    Args:
-        image_paths: list of image paths
-        patch_scores_list: list of patch score tensors
-        anomaly_scores: list of image level scores
-        labels: list of ground truth labels
-        save_dir: directory to save visualizations
-        n_samples: number of samples to visualize
+    All images saved to disk — no manual closing required.
     """
     indices = np.random.choice(len(image_paths), min(n_samples, len(image_paths)), replace=False)
 

@@ -72,30 +72,6 @@ Categories: bottle, cable, capsule, carpet, grid, hazelnut, leather, metal_nut, 
 
 Download from https://www.mvtec.com/research-teaching/datasets/mvtec-ad and place at data/mvtec/. This folder is gitignored.
 
-## Project Structure
-
-```
-visual-anomaly-detection/
-├── src/
-│   ├── data/
-│   │   └── dataset.py          # MVTec dataset loader
-│   ├── model/
-│   │   ├── extractor.py        # DINOv2 frozen feature extractor
-│   │   └── patchcore.py        # memory bank and anomaly scoring
-│   ├── evaluation/
-│   │   └── metrics.py          # AUROC and average precision
-│   └── visualization/
-│       └── gradcam.py          # patch score heatmap generation
-├── app/
-│   └── streamlit_app.py        # interactive demo
-├── assets/                     # sample visualizations for README
-├── experiments/
-│   └── results/
-│       └── results.json        # evaluation results across all 15 categories
-├── artifacts/                  # saved memory banks (gitignored)
-├── data/                       # MVTec dataset (gitignored)
-└── run_pipeline.py             # end-to-end pipeline script
-```
 
 ## Setup
 

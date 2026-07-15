@@ -15,7 +15,7 @@ build/
 # Data and artifacts
 /data/
 artifacts/
-experiments/results/*.json
+
 
 # Environment variables
 .env

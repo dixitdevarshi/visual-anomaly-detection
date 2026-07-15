@@ -72,12 +72,7 @@ def main():
     SAVE_DIR = "experiments/results"
     BATCH_SIZE = 16
     CORESET_RATIO = 0.1
-
-    CATEGORIES_TO_RUN = [
-        "cable", "capsule", "carpet", "grid",
-        "metal_nut", "pill", "screw", "tile",
-        "toothbrush", "transistor", "wood", "zipper"
-    ]
+    CATEGORIES_TO_RUN = MVTEC_CATEGORIES
 
     extractor = DINOv2Extractor()
 

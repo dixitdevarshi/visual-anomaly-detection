@@ -1,6 +1,8 @@
 import streamlit as st
 import torch
 import numpy as np
+import matplotlib.pyplot as plt
+import io
 from PIL import Image
 from pathlib import Path
 import sys
@@ -11,7 +13,6 @@ from src.model.extractor import DINOv2Extractor
 from src.model.patchcore import PatchCore
 from src.visualization.gradcam import patch_scores_to_heatmap, overlay_heatmap
 
-# page config
 st.set_page_config(
     page_title="Visual Anomaly Detection",
     page_icon="🔍",
@@ -21,7 +22,6 @@ st.set_page_config(
 st.title("🔍 Visual Anomaly Detection")
 st.markdown("Upload a product image to detect defects using DINOv2 + PatchCore")
 
-# sidebar
 st.sidebar.header("Settings")
 category = st.sidebar.selectbox(
     "Product Category",
@@ -32,15 +32,16 @@ category = st.sidebar.selectbox(
 threshold = st.sidebar.slider(
     "Anomaly Threshold",
     min_value=0.0,
-    max_value=1.0,
-    value=0.5,
-    step=0.01
+    max_value=100.0,
+    value=30.0,
+    step=0.5
 )
 
-# load models
+
 @st.cache_resource
 def load_extractor():
     return DINOv2Extractor()
+
 
 @st.cache_resource
 def load_patchcore(category: str):
@@ -55,7 +56,18 @@ def load_patchcore(category: str):
     patchcore.load(memory_bank_path)
     return patchcore
 
-# main interface
+
+def heatmap_to_image(heatmap: np.ndarray) -> io.BytesIO:
+    fig, ax = plt.subplots(figsize=(4, 4))
+    ax.imshow(heatmap, cmap="jet")
+    ax.axis("off")
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png", bbox_inches="tight", pad_inches=0)
+    buf.seek(0)
+    plt.close()
+    return buf
+
+
 uploaded_file = st.file_uploader(
     "Upload a product image",
     type=["png", "jpg", "jpeg", "bmp"]
@@ -92,10 +104,11 @@ if uploaded_file:
 
         heatmap = patch_scores_to_heatmap(patch_score)
         overlaid = overlay_heatmap(image_np, heatmap)
+        heatmap_buf = heatmap_to_image(heatmap)
 
     with col2:
         st.subheader("Anomaly Heatmap")
-        st.image(heatmap, use_column_width=True, clamp=True)
+        st.image(heatmap_buf, use_column_width=True)
 
     with col3:
         st.subheader("Overlay")
@@ -103,7 +116,6 @@ if uploaded_file:
 
     st.divider()
 
-    # result
     is_anomaly = score > threshold
     if is_anomaly:
         st.error(f"⚠️ Anomaly Detected | Score: {score:.4f}")
@@ -111,4 +123,4 @@ if uploaded_file:
         st.success(f"✅ Normal | Score: {score:.4f}")
 
     st.metric("Anomaly Score", f"{score:.4f}")
-    st.progress(min(score, 1.0))
+    st.progress(min(score / 100.0, 1.0))

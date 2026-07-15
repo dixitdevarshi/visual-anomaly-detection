@@ -19,11 +19,11 @@ Evaluated across all 15 product categories in the MVTec AD benchmark:
 **Transistor — Burnt Component**
 ![Transistor](assets/transistor_anomaly.png)
 
-**Zipper — Broken Tooth**
-![Zipper](assets/zipper_anomaly.png)
-
 **Screw — Tip Damage**
 ![Screw](assets/screw_anomaly.png)
+
+**Zipper — Broken Tooth**
+![Zipper](assets/zipper_anomaly.png)
 
 **Carpet — Pulled Thread**
 ![Carpet](assets/carpet_anomaly.png)

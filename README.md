@@ -1,4 +1,4 @@
-# Visual Anomaly Detection — DINOv2 + PatchCore on MVTec AD
+# Visual Anomaly Detection - DINOv2 + PatchCore on MVTec AD
 
 Unsupervised industrial defect detection using self-supervised vision features and memory-bank scoring with spatial localization. No defect labels required during training.
 
@@ -55,7 +55,7 @@ Input Image (224x224)
         ↓
 DINOv2 ViT-B/14 (frozen, no fine-tuning)
         ↓
-Patch-level features — 256 patches x 768 dims
+Patch-level features - 256 patches x 768 dims
         ↓
 PatchCore Memory Bank (greedy coreset subsampling at 10%)
         ↓
@@ -92,7 +92,7 @@ pip install -r requirements.txt
 python run_pipeline.py
 ```
 
-Builds memory banks for all 15 categories, evaluates on test sets, saves AUROC scores to experiments/results/results.json, and saves heatmap visualizations to experiments/results/visualizations/.
+Builds memory banks for all 15 categories, evaluates on test sets, saves AUROC scores and saves heatmap visualizations.
 
 ## Run Demo
 

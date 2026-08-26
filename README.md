@@ -16,36 +16,36 @@ Evaluated across all 15 product categories in the MVTec AD benchmark:
 
 ## Qualitative Results
 
-**Transistor — Burnt Component**
+**Transistor - Burnt Component**
 ![Transistor](assets/transistor_anomaly.png)
 
-**Screw — Tip Damage**
+**Screw - Tip Damage**
 ![Screw](assets/screw_anomaly.png)
 
-**Zipper — Broken Tooth**
+**Zipper - Broken Tooth**
 ![Zipper](assets/zipper_anomaly.png)
 
-**Carpet — Pulled Thread**
+**Carpet - Pulled Thread**
 ![Carpet](assets/carpet_anomaly.png)
 
 ## What This System Does
 
-Takes a product image as input and outputs an anomaly score plus a spatial heatmap highlighting exactly where the defect is — trained only on normal images, never shown a single defect example.
+Takes a product image as input and outputs an anomaly score plus a spatial heatmap highlighting exactly where the defect is, trained only on normal images, never shown a single defect example.
 
 The system learns what normal looks like from defect-free training images. At inference, anything that deviates from that learned distribution is flagged and localized.
 
 ## How It Works
 
-**Step 1 — Feature Extraction**
+**Step 1 - Feature Extraction**
 Each training image is passed through DINOv2 ViT-B/14, a frozen self-supervised vision transformer. The image is split into 256 patches and each patch gets a 768-dimensional feature vector describing that local region.
 
-**Step 2 — Memory Bank**
+**Step 2 - Memory Bank**
 All patch features from normal training images are collected and compressed using greedy coreset subsampling, keeping a representative 10% subset. This becomes the memory bank of what normal looks like.
 
-**Step 3 — Anomaly Scoring**
+**Step 3 - Anomaly Scoring**
 At inference, patch features from a new image are compared against the memory bank using nearest-neighbor distance. Patches far from any normal feature are anomalous. The maximum patch distance becomes the image-level anomaly score.
 
-**Step 4 — Spatial Localization**
+**Step 4 - Spatial Localization**
 Patch-level scores are upsampled back to image resolution and overlaid as a heatmap, showing exactly where the defect is located.
 
 ## Architecture
@@ -66,11 +66,11 @@ Image-level anomaly score + spatial heatmap
 
 ## Dataset
 
-MVTec AD — 15 industrial product categories, 5354 normal training images, 1725 test images covering normal and anomalous samples.
+MVTec AD - 15 industrial product categories, 5354 normal training images, 1725 test images covering normal and anomalous samples.
 
 Categories: bottle, cable, capsule, carpet, grid, hazelnut, leather, metal_nut, pill, screw, tile, toothbrush, transistor, wood, zipper.
 
-Download from https://www.mvtec.com/research-teaching/datasets/mvtec-ad and place at data/mvtec/. This folder is gitignored.
+Download from https://www.mvtec.com/research-teaching/datasets/mvtec-ad
 
 
 ## Setup

@@ -16,7 +16,6 @@ build/
 /data/
 artifacts/
 
-
 # Environment variables
 .env
 
@@ -27,5 +26,6 @@ artifacts/
 .DS_Store
 Thumbs.db
 
-# Anomalib results
-results/
+# Generated output images
+experiments/results/*.png
+experiments/results/visualizations/

@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 from torchvision import transforms
 from PIL import Image
-from pathlib import Path
 
 
 class DINOv2Extractor(nn.Module):
@@ -15,7 +14,14 @@ class DINOv2Extractor(nn.Module):
         """
         super().__init__()
 
-        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        if device:
+            self.device = device
+        elif torch.cuda.is_available():
+            self.device = "cuda"
+            print(f"GPU detected: {torch.cuda.get_device_name(0)}")
+        else:
+            self.device = "cpu"
+            print("No GPU detected, running on CPU")
 
         self.model = torch.hub.load("facebookresearch/dinov2", model_name)
         self.model.eval()

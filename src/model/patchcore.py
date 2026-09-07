@@ -95,5 +95,5 @@ class PatchCore:
 
     def load(self, path: str):
         """Load memory bank from disk."""
-        self.memory_bank = torch.load(path)
+        self.memory_bank = torch.load(path, weights_only=True)
         print(f"Memory bank loaded from {path}")

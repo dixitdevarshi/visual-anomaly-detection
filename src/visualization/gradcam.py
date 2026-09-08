@@ -69,7 +69,7 @@ def visualize_anomaly(
     image_size: int = 224,
     patch_size: int = 14
 ) -> None:
-    
+
     image = Image.open(image_path).convert("RGB").resize((image_size, image_size))
     image_np = np.array(image)
 

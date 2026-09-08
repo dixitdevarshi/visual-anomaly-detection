@@ -1,74 +1,78 @@
 import torch
 import numpy as np
 from tqdm import tqdm
+from typing import Optional, Tuple
 from torch.utils.data import DataLoader
 from src.model.extractor import DINOv2Extractor
 
 
 class PatchCore:
-    def __init__(self, extractor: DINOv2Extractor, coreset_ratio: float = 0.1):
+    def __init__(self, extractor: DINOv2Extractor, coreset_ratio: float = 0.1) -> None:
         """
         PatchCore anomaly detection using a memory bank of normal features.
+
         Args:
             extractor: DINOv2Extractor instance
-            coreset_ratio: fraction of features to keep in memory bank (0.1 = 10%)
+            coreset_ratio: fraction of features to keep in memory bank
         """
         self.extractor = extractor
         self.coreset_ratio = coreset_ratio
-        self.memory_bank = None
+        self.memory_bank: Optional[torch.Tensor] = None
 
-    def fit(self, dataloader: DataLoader):
+    def fit(self, dataloader: DataLoader) -> None:
         """
         Build memory bank from normal training images.
+
         Args:
-            dataloader: DataLoader returning normal images only (train split)
+            dataloader: DataLoader returning normal images only
         """
         print("Building memory bank from normal images...")
-        all_features = []
+        all_features: list[torch.Tensor] = []
 
         for batch in tqdm(dataloader):
-            images = batch["image"]
-            features = self.extractor.extract_features(images)
+            images: torch.Tensor = batch["image"]
+            features: torch.Tensor = self.extractor.extract_features(images)
 
-            # flatten patches: (B, num_patches, embed_dim) -> (B*num_patches, embed_dim)
             B, N, D = features.shape
             features = features.reshape(B * N, D)
             all_features.append(features.cpu())
 
-        all_features = torch.cat(all_features, dim=0)
-        print(f"Total features before coreset: {all_features.shape}")
+        combined: torch.Tensor = torch.cat(all_features, dim=0)
+        print(f"Total features before coreset: {combined.shape}")
 
-        self.memory_bank = self._coreset_subsampling(all_features)
+        self.memory_bank = self._coreset_subsampling(combined)
         print(f"Memory bank size after coreset: {self.memory_bank.shape}")
 
     def _coreset_subsampling(self, features: torch.Tensor) -> torch.Tensor:
         """
         Greedy coreset subsampling to reduce memory bank size.
-        Keeps the most representative subset of features.
-        """
-        n_samples = int(len(features) * self.coreset_ratio)
-        n_samples = max(n_samples, 100)  # minimum 100 samples
 
-        selected = [np.random.randint(0, len(features))]
+        Args:
+            features: tensor of shape (N, embed_dim)
+
+        Returns:
+            coreset tensor of shape (n_samples, embed_dim)
+        """
+        n_samples = max(int(len(features) * self.coreset_ratio), 100)
+
+        selected: list[int] = [int(np.random.randint(0, len(features)))]
 
         for _ in tqdm(range(n_samples - 1), desc="Coreset subsampling"):
             selected_features = features[selected]
-
-            # distance from each feature to nearest selected feature
             dists = torch.cdist(features, selected_features)
             min_dists = dists.min(dim=1).values
-
-            # pick the feature furthest from all selected
-            next_idx = min_dists.argmax().item()
+            next_idx = int(min_dists.argmax().item())
             selected.append(next_idx)
 
         return features[selected]
 
-    def predict(self, images: torch.Tensor):
+    def predict(self, images: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Compute anomaly scores for a batch of images.
+
         Args:
             images: tensor of shape (B, 3, 224, 224)
+
         Returns:
             image_scores: (B,) anomaly score per image
             patch_scores: (B, num_patches) score per patch for heatmap
@@ -79,21 +83,20 @@ class PatchCore:
         B, N, D = features.shape
         features_flat = features.reshape(B * N, D).cpu()
 
-        # distance from each patch to nearest memory bank entry
         dists = torch.cdist(features_flat, self.memory_bank)
-        min_dists = dists.min(dim=1).values  # (B*N,)
+        min_dists = dists.min(dim=1).values
 
         patch_scores = min_dists.reshape(B, N)
-        image_scores = patch_scores.max(dim=1).values  # max patch score = image score
+        image_scores = patch_scores.max(dim=1).values
 
         return image_scores, patch_scores
 
-    def save(self, path: str):
+    def save(self, path: str) -> None:
         """Save memory bank to disk."""
         torch.save(self.memory_bank, path)
         print(f"Memory bank saved to {path}")
 
-    def load(self, path: str):
+    def load(self, path: str) -> None:
         """Load memory bank from disk."""
         self.memory_bank = torch.load(path, weights_only=True)
         print(f"Memory bank loaded from {path}")

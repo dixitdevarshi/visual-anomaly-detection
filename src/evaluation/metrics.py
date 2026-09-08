@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.metrics import roc_auc_score, average_precision_score
+from sklearn.metrics import roc_auc_score, average_precision_score  # type: ignore
 from typing import List, Dict
 
 

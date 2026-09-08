@@ -2,7 +2,8 @@ import torch
 from pathlib import Path
 from torch.utils.data import DataLoader
 
-from src.data.dataset import MVTecDataset, MVTEC_CATEGORIES
+from src.config import PipelineConfig
+from src.data.dataset import MVTecDataset
 from src.model.extractor import DINOv2Extractor
 from src.model.patchcore import PatchCore
 from src.evaluation.metrics import compute_category_metrics, compute_overall_metrics, save_results
@@ -12,38 +13,34 @@ from src.tracking.mlflow_logger import log_pipeline_run
 
 def run_category(
     category: str,
-    data_root: str,
+    config: PipelineConfig,
     extractor: DINOv2Extractor,
-    coreset_ratio: float = 0.1,
-    batch_size: int = 16,
-    visualize: bool = True,
-    save_dir: str = "experiments/results"
-):
+) -> dict:
     print(f"\n{'='*50}")
     print(f"Running category: {category.upper()}")
     print(f"{'='*50}")
 
-    train_dataset = MVTecDataset(data_root, category, split="train")
-    test_dataset = MVTecDataset(data_root, category, split="test")
+    train_dataset = MVTecDataset(config.data_root, category, split="train")
+    test_dataset = MVTecDataset(config.data_root, category, split="test")
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
+    train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=False, num_workers=0)
+    test_loader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False, num_workers=0)
 
-    patchcore = PatchCore(extractor=extractor, coreset_ratio=coreset_ratio)
+    patchcore = PatchCore(extractor=extractor, coreset_ratio=config.coreset_ratio)
     patchcore.fit(train_loader)
 
     artifact_path = f"artifacts/{category}_memory_bank.pt"
     patchcore.save(artifact_path)
 
-    all_labels = []
-    all_image_scores = []
-    all_patch_scores = []
-    all_paths = []
+    all_labels: list[int] = []
+    all_image_scores: list[float] = []
+    all_patch_scores: list[torch.Tensor] = []
+    all_paths: list[str] = []
 
     for batch in test_loader:
-        images = batch["image"]
-        labels = batch["label"]
-        paths = batch["path"]
+        images: torch.Tensor = batch["image"]
+        labels: torch.Tensor = batch["label"]
+        paths: list[str] = batch["path"]
 
         image_scores, patch_scores = patchcore.predict(images)
 
@@ -54,50 +51,32 @@ def run_category(
 
     result = compute_category_metrics(all_labels, all_image_scores, category)
 
-    if visualize:
-        vis_dir = f"{save_dir}/visualizations/{category}"
+    if config.visualize:
+        vis_dir = f"{config.save_dir}/visualizations/{category}"
         visualize_batch(
             image_paths=all_paths,
             patch_scores_list=all_patch_scores,
             anomaly_scores=all_image_scores,
             labels=all_labels,
             save_dir=vis_dir,
-            n_samples=5
+            n_samples=config.n_samples_visualize
         )
 
     return result
 
 
-def main():
-    DATA_ROOT = "data/mvtec"
-    SAVE_DIR = "experiments/results"
-    BATCH_SIZE = 16
-    CORESET_RATIO = 0.1
-    MODEL_NAME = "dinov2_vitb14"
-    EXPERIMENT_NAME = "visual-anomaly-detection"
-    CATEGORIES_TO_RUN = MVTEC_CATEGORIES
+def main() -> None:
+    config = PipelineConfig()
 
-    params = {
-        "coreset_ratio": CORESET_RATIO,
-        "batch_size": BATCH_SIZE,
-        "model": MODEL_NAME,
-        "image_size": 224,
-        "n_categories": len(CATEGORIES_TO_RUN)
-    }
-
-    extractor = DINOv2Extractor()
+    extractor = DINOv2Extractor(model_name=config.model_name)
 
     all_results = []
 
-    for category in CATEGORIES_TO_RUN:
+    for category in config.categories:
         result = run_category(
             category=category,
-            data_root=DATA_ROOT,
+            config=config,
             extractor=extractor,
-            coreset_ratio=CORESET_RATIO,
-            batch_size=BATCH_SIZE,
-            visualize=True,
-            save_dir=SAVE_DIR
         )
         all_results.append(result)
 
@@ -106,17 +85,16 @@ def main():
     save_results(
         category_results=all_results,
         overall=overall,
-        save_path=f"{SAVE_DIR}/results.json"
+        save_path=f"{config.save_dir}/results.json"
     )
 
-    # log everything to MLflow
     log_pipeline_run(
-        experiment_name=EXPERIMENT_NAME,
-        run_name=f"patchcore_{MODEL_NAME}_coreset{CORESET_RATIO}",
-        params=params,
+        experiment_name=config.experiment_name,
+        run_name=f"patchcore_{config.model_name}_coreset{config.coreset_ratio}",
+        params=config.model_dump(),
         category_results=all_results,
         overall=overall,
-        visualization_dir=f"{SAVE_DIR}/visualizations"
+        visualization_dir=f"{config.save_dir}/visualizations"
     )
 
     print("\nPipeline complete.")

@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from PIL import Image
 from pathlib import Path
+from typing import Optional
 
 
 def patch_scores_to_heatmap(
@@ -64,14 +65,11 @@ def visualize_anomaly(
     patch_scores: torch.Tensor,
     anomaly_score: float,
     label: int,
-    save_path: str = None,
+    save_path: Optional[str] = None,
     image_size: int = 224,
     patch_size: int = 14
-):
-    """
-    Full visualization: original image + heatmap side by side.
-    Saves to disk silently — no window popup.
-    """
+) -> None:
+    
     image = Image.open(image_path).convert("RGB").resize((image_size, image_size))
     image_np = np.array(image)
 
@@ -107,9 +105,9 @@ def visualize_batch(
     patch_scores_list: list,
     anomaly_scores: list,
     labels: list,
-    save_dir: str = None,
+    save_dir: Optional[str] = None,
     n_samples: int = 5
-):
+) -> None:
     """
     Visualize a batch of predictions.
     All images saved to disk — no manual closing required.

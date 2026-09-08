@@ -29,3 +29,6 @@ Thumbs.db
 # Generated output images
 experiments/results/*.png
 experiments/results/visualizations/
+
+mlflow.db
+mlruns/

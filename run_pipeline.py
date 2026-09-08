@@ -7,6 +7,7 @@ from src.model.extractor import DINOv2Extractor
 from src.model.patchcore import PatchCore
 from src.evaluation.metrics import compute_category_metrics, compute_overall_metrics, save_results
 from src.visualization.gradcam import visualize_batch
+from src.tracking.mlflow_logger import log_pipeline_run
 
 
 def run_category(
@@ -72,7 +73,17 @@ def main():
     SAVE_DIR = "experiments/results"
     BATCH_SIZE = 16
     CORESET_RATIO = 0.1
+    MODEL_NAME = "dinov2_vitb14"
+    EXPERIMENT_NAME = "visual-anomaly-detection"
     CATEGORIES_TO_RUN = MVTEC_CATEGORIES
+
+    params = {
+        "coreset_ratio": CORESET_RATIO,
+        "batch_size": BATCH_SIZE,
+        "model": MODEL_NAME,
+        "image_size": 224,
+        "n_categories": len(CATEGORIES_TO_RUN)
+    }
 
     extractor = DINOv2Extractor()
 
@@ -96,6 +107,16 @@ def main():
         category_results=all_results,
         overall=overall,
         save_path=f"{SAVE_DIR}/results.json"
+    )
+
+    # log everything to MLflow
+    log_pipeline_run(
+        experiment_name=EXPERIMENT_NAME,
+        run_name=f"patchcore_{MODEL_NAME}_coreset{CORESET_RATIO}",
+        params=params,
+        category_results=all_results,
+        overall=overall,
+        visualization_dir=f"{SAVE_DIR}/visualizations"
     )
 
     print("\nPipeline complete.")

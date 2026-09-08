@@ -1,0 +1,11 @@
+venv/
+data/
+artifacts/
+.git/
+__pycache__/
+*.pyc
+.env
+mlruns/
+notebooks/
+.vscode/
+experiments/results/visualizations/

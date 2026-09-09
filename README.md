@@ -164,7 +164,7 @@ pytest tests/ -v
 
 ## Tech Stack
 
-Python, PyTorch, DINOv2, PatchCore, MLflow, Docker, MVTec AD, Streamlit, pytest, GitHub Actions, scikit-learn, matplotlib
+Python, PyTorch, DINOv2, PatchCore, MLflow, Docker, MVTec AD, Streamlit, Pydantic, pytest, GitHub Actions, scikit-learn, matplotlib
 
 ## References
 

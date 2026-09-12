@@ -3,10 +3,15 @@ FROM python:3.10-slim
 WORKDIR /app
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir mlflow
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir fastapi uvicorn python-multipart
 
-COPY mlflow.db .
+COPY src/ ./src/
+COPY api.py .
+COPY conftest.py .
 
-EXPOSE 5000
+RUN mkdir -p artifacts
 
-CMD ["mlflow", "ui", "--backend-store-uri", "sqlite:///mlflow.db", "--host", "0.0.0.0", "--port", "5000"]
+EXPOSE 8000
+
+CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]

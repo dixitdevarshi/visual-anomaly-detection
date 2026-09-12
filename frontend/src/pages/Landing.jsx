@@ -41,7 +41,7 @@ export default function Landing({ onStart }) {
           </span>
           <div style={{ width: '1px', height: '16px', background: '#30363D' }} />
           <a
-            href="https://github.com/dixitdevarshi/visual-anomaly-detection"
+            href="https://github.com/dixitdevarshi"
             target="_blank"
             rel="noreferrer"
             style={{ color: '#8B949E', textDecoration: 'none', fontSize: '13px' }}
